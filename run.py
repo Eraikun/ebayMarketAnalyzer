@@ -49,23 +49,23 @@ e_vars = EbayVariables(run_cached=False,
                        trend_type='poly',
                        trend_param=[1, 14],  # [Poly_Degree, Days_Out]
                        extra_title_text='',
-                       country='USA',
-                       ccode='$',
+                       country='GER',
+                       ccode='€',
                        days_before=7,
                        feedback=True,
                        quantity_hist=False,
                        debug=True,
                        verbose=True,
                        sacat=0,
-                       tax_rate=0.0625,
-                       store_rate=0.04,  # The computer store rate
-                       non_store_rate=0.1,  # The computer non-store rate
+                       tax_rate=0.19,   # In Germany the taxrate is at 19% in 2023
+                       store_rate=0.1,  # The computer store rate is, as far as I know, still the same citation needed
+                       non_store_rate=0,  # In 2023 non_store rate dropped to 0%
                        desc_ignore_list=ignore_list,
                        brand_list=[],
                        model_list=[],
                        agent_list=pd.DataFrame()
                        )
-
+'''
 # CPU specific class variables
 cpu_vars = deepcopy(e_vars)
 cpu_vars.sacat = 164
@@ -79,19 +79,19 @@ gpu_vars = deepcopy(e_vars)
 gpu_vars.sacat = 27386
 gpu_vars.brand_list = brand_list
 gpu_vars.model_list = model_list
-
+'''
 # Console specific class variables
 console_vars = deepcopy(e_vars)
 console_vars.sacat = 139971
 console_vars.store_rate = 0.0915
-
+'''
 # Other potentially useful sacats
 psu_sacat = 42017
 ssd_sacat = 175669
 memory_sacat = 170083
 comp_case_sacat = 42014
 cpu_cooler_sacat = 131486
-
+'''
 # If you terminate a run of the program before it completes, it leaves orphan sqlite files. Best to just delete them
 for x in os.listdir():
     if x.endswith(".sqlite"):
@@ -350,7 +350,7 @@ median_plotting(zenplus_frames, 'Zen+ Median Pricing', e_vars=cpu_vars, roll=0)
 median_plotting(zenplus_frames, 'Zen+ Median Pricing', e_vars=cpu_vars, roll=0)
 
 # ---------------------------------------------------------------------------------------------
-'''
+
 # PS4 Analysis
 df_ps4 = ebay_search('PS4 -pro -repair -box -broken -parts -bad', console_vars, query_exclusions, 399, 60, 5000)
 df_ps4_pro = ebay_search('PS4 pro -repair -box -broken -parts -bad', console_vars, query_exclusions, 399, 60, 5000)
@@ -373,7 +373,7 @@ df_xbox_one_x = ebay_search('Xbox One X -repair -series -box -broken -parts -bad
 xbox_one_frames = [df_xbox_one_s, df_xbox_one_x]
 median_plotting(xbox_one_frames, 'Xbox One Median Pricing', e_vars=console_vars, roll=0)
 median_plotting(xbox_one_frames, 'Xbox One Median Pricing', e_vars=console_vars, roll=7)
-
+'''
 # ---------------------------------------------------------------------------------------------
 
 # PS5 Analysis (All time)
@@ -388,7 +388,7 @@ ps5_frames = [df_ps5_digital, df_ps5_disc]
 
 median_plotting(ps5_frames, 'PS5 Median Pricing', e_vars=console_vars, roll=0)
 median_plotting(ps5_frames, 'PS5 Median Pricing', e_vars=console_vars, roll=7)
-
+'''
 # ---------------------------------------------------------------------------------------------
 
 # Xbox Analysis (All time)
@@ -418,7 +418,7 @@ median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_
 median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_vars, roll=7)
 
 # ---------------------------------------------------------------------------------------------
-'''
+
 # Fermi Series
 df_520 = ebay_search('(nvidia, GTX, geforce, gt) 520 -nvs -quadro', gpu_vars, query_exclusions, 59, 0, 2000)
 df_530 = ebay_search('(nvidia, GTX, geforce, gt) 530 -nvs -quadro -tesla', gpu_vars, query_exclusions, 75, 0, 400)
@@ -549,6 +549,5 @@ df_RX480 = ebay_search('RX 480', gpu_vars, query_exclusions, 199, 0, 550)
 rx_400_frames = [df_RX460, df_RX470, df_RX480]
 median_plotting(rx_400_frames, 'RX 400 Series Median Pricing', e_vars=gpu_vars, roll=0)
 median_plotting(rx_400_frames, 'RX 400 Series Median Pricing', e_vars=gpu_vars, roll=7)
-
-# ---------------------------------------------------------------------------------------------
 '''
+# ---------------------------------------------------------------------------------------------
