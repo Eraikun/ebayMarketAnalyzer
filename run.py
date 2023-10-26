@@ -48,7 +48,7 @@ e_vars = EbayVariables(run_cached=False,
                        trend_type='poly',
                        trend_param=[1, 14],  # [Poly_Degree, Days_Out]
                        extra_title_text='',
-                       country='GER',
+                       country='DE',
                        ccode='€',
                        days_before=7,
                        feedback=True,

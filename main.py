@@ -21,7 +21,7 @@ import requests
 import requests_cache
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util import Retry
 
 from classes import EbayVariables
 from plotting import ebay_plot, plot_profits
@@ -153,8 +153,8 @@ def validate_inputs(query: str,
     if not isinstance(e_vars.country, str):
         print('EbayVariables class variable country is not a string!')
         validation_success = False
-    elif e_vars.country != 'USA' and e_vars.country != 'UK':
-        print('EbayVariables class variable country must be "USA" or "UK"!')
+    elif e_vars.country != 'USA' and e_vars.country != 'UK' and e_vars.country != 'DE':
+        print('EbayVariables class variable country must be "USA" or "UK" or "DE"!')
         validation_success = False
 
     if not isinstance(e_vars.ccode, str):
@@ -421,6 +421,8 @@ def sp_get_datetime(item, days_before_date, e_vars, sp_link):
         # orig_item_datetime = f"{current_year} {item.find('span', class_='s-item__endedDate').text}"
         if e_vars.country == 'UK':
             item_datetime = datetime.strptime(orig_item_datetime, '%Y %d-%b %H:%M')
+        elif e_vars.country == 'DE':
+            item_date = datetime.strptime(date_txt, '%d. %b %Y')
         else:
             item_datetime = datetime.strptime(orig_item_datetime, '%Y %b-%d %H:%M')
 
@@ -515,7 +517,7 @@ def ebay_scrape(base_url: str,
 
     def sp_get_title(item):
         try:
-            item_title = item.find('h3', class_='s-item__title').text
+            item_title = item.find('div', class_='s-item__title').text
         except Exception as e:
             item_title = ''
             if e_vars.verbose: print('sp_get_title', e, item_link)
@@ -555,31 +557,24 @@ def ebay_scrape(base_url: str,
         try:
             date_one = item_soup.find('div', attrs={'class': 'ux-layout-section__textual-display ux-layout-section__textual-display--statusMessage'})
             date_one = date_one.find('span', attrs={'class': 'ux-textspans ux-textspans--BOLD'})
-            date_one = date_one.text.replace("\n", " ").replace("at", " ").replace("This listing ended on", "").replace(",", "").strip().split()
-            if date_one[4]=="PM":
-                temp = date_one[3].split(':')
-                date_one[3] = temp[0]
-                date_one[4] = temp[1]
-                date_one[3] = ""+int(date_one[3])+12
-                date_one.append('00')
-            else:
-                temp = date_one[3].split(':')
-                date_one[3] = temp[0]
-                date_one[4] = temp[1]
-                date_one.append('00')
-            print(f"{date_one[2]} {date_one[1]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}")
+            date_one = date_one.text.replace("\n", " ").replace("Dieses Angebot wurde am ", "").replace(",", "").replace("um ", "").strip().split()
+            temp = date_one[3].split(':')
+            date_one[3] = temp[0]
+            date_one[4] = temp[1]
+            date_one.append('00')
+            print(f"{date_one[1]} {date_one[2]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}")
             try:
                 # Normally eBay stores the date as a 12 hour time, but at times it's 24 hour
-                if e_vars.country == 'UK':
-                    item_datetime = datetime.strptime(f"{date_one[2]} {date_one[1]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
-                                                      "%d %b %Y %I:%M:%S")
+                if e_vars.country == 'DE':
+                    item_datetime = datetime.strptime(f"{date_one[1]} {date_one[2]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
+                                                      "%d. %b %Y %I:%M:%S")
                 else:
                     item_datetime = datetime.strptime(f"{date_one[1]} {date_one[2]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
                                                       "%b %d %Y %I:%M:%S")
             except Exception as e:
-                if e_vars.country == 'UK':
-                    item_datetime = datetime.strptime(f"{date_one[2]} {date_one[1]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
-                                                      "%d %b %Y %H:%M:%S")
+                if e_vars.country == 'DE':
+                    item_datetime = datetime.strptime(f"{date_one[1]} {date_one[2]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
+                                                      "%d. %b %Y %H:%M:%S")
                 else:
                     item_datetime = datetime.strptime(f"{date_one[1]} {date_one[2]} {datetime.now().year} {date_one[3]}:{date_one[4]}:{date_one[5]}",
                                                       "%b %d %Y %H:%M:%S")
@@ -592,7 +587,7 @@ def ebay_scrape(base_url: str,
         return item_date, item_datetime, days_before_date
 
     def slicer(my_str,sub):
-        index=my_str.find(sub)+3
+        index=my_str.find(sub)+9
         if index !=-1 :
             return my_str[index:] 
         else:
@@ -610,11 +605,11 @@ def ebay_scrape(base_url: str,
                 raise Exception
         except Exception as e:
             try:
-                loc = item_soup.find('div', attrs={'class': 'vim d-vi-region x-atf-center-river--bottom'})
+                loc = item_soup.find('div', attrs={'class': 'ux-labels-values col-12 ux-labels-values--shipping'})
                 loc = loc.find('span', attrs={'class': 'ux-textspans ux-textspans--SECONDARY'})
                 loc = loc.text.split(',')
                 loc[0] = loc[0].strip()
-                loc[0] = slicer(loc[0], 'in:')
+                loc[0] = slicer(loc[0], 'Standort:')
                 if len(loc) == 2:
                     city, state, country_name = loc[0], '', loc[1].strip()
                 elif len(loc) == 3:
@@ -812,7 +807,7 @@ def ebay_scrape(base_url: str,
                                 source = adapter.get(orig_link).text
                             item_soup = BeautifulSoup(source, 'lxml')
 
-                        if not item_datetime:
+                        if not item_datetime or item_date:
                             time.sleep(e_vars.sleep_len * random.uniform(0, 1))
                             # We don't want to cache all the calls into the individual listings, they'll never be repeated
                             with requests_cache.disabled():
@@ -888,10 +883,10 @@ def ebay_scrape(base_url: str,
 
                             if 'Sold' in date_time:
                                 date_txt = date_time.replace('Sold', '').replace(',', '').strip()
-                                if e_vars.country == 'UK':
-                                    item_date = datetime.strptime(date_txt, "%d %b %Y")
-                                else:
-                                    item_date = datetime.strptime(date_txt, "%b %d %Y")
+                                item_date = datetime.strptime(date_txt, "%d %b %Y")
+                            else:
+                                date_txt = date_time.replace('Verkauft', '').replace(',', '').strip()
+                                item_date = datetime.strptime(date_txt, "%d. %B %Y")
                             item_datetime = item_date
 
                         except Exception as e:
@@ -1110,6 +1105,9 @@ def ebay_search(query: str,
         if e_vars.country == 'UK':
             extension = 'co.uk'
             num_check = 193
+        elif e_vars.country == "DE":
+            extension = 'de'
+            num_check = 77
         else:
             extension = 'com'
             num_check = 201
