@@ -7,7 +7,7 @@
 import os
 from copy import deepcopy
 from datetime import datetime
-
+import locale
 import pandas as pd
 
 from classes import EbayVariables
@@ -15,11 +15,10 @@ from main import ebay_search
 from plotting import median_plotting, brand_plot, ebay_seller_plot
 
 
-"""
-    German format might cause main to cause errors
-    changing Locale might solve the problem:
-    locale.setlocale(locale.LC_C,"the monetary comes here!")    
-"""
+'''
+    Time format d%. b% Y% (13. Okt 2015) might break the code. Better change locale in python environment
+'''
+locale.setlocale(locale.LC_ALL,'C')    
 
 
 brand_list = ['FOUNDER', 'ASUS', 'MSI', 'EVGA', 'GIGABYTE', 'ZOTAC', 'XFX', 'PNY', 'SAPPHIRE', 'COLORFUL', 'ASROCK',
