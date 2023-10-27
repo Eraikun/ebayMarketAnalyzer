@@ -3,3 +3,4 @@
 /XMLS
 /__pycache__
 *.sqlite
+*.xlsx

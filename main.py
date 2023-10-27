@@ -13,6 +13,7 @@ import random
 import re
 import time
 from datetime import datetime, timedelta
+import locale
 from typing import List, Union, Any, Tuple
 
 import numpy as np
@@ -29,7 +30,7 @@ from plotting import ebay_plot, plot_profits
 
 # pylint: disable=line-too-long
 # pylint: disable=multiple-statements
-
+locale.setlocale(locale.LC_ALL, 'de_DE')
 def validate_inputs(query: str,
                     e_vars: EbayVariables,
                     query_exclusions: List[str] = [],
@@ -534,10 +535,14 @@ def ebay_scrape(base_url: str,
     def sp_get_price(item):
         try:
             item_price = item.find('span', class_='s-item__price').text
-            item_price = float(re.sub(r'[^\d.]+', '', item_price))
+            item_price = float(re.sub(r'[^\d,]+', '', item_price).replace(',','.'))
         except Exception as e:
-            item_price = -1
-            if e_vars.verbose: print('sp_get_price', e, item_link)
+            try:
+                item_price = item.find('span', class_='s-item__price').text
+                item_price = float(re.sub(r'[^\d.]+', '', item_price))
+            except:
+                item_price = -1
+                if e_vars.verbose: print('sp_get_price', e, item_link)
         return item_price
 
     def sp_get_shipping(item):
@@ -553,12 +558,19 @@ def ebay_scrape(base_url: str,
         return item_shipping
 
     def ip_get_datetime(item_soup, days_before_date):
-        item_date, item_datetime = '', ''
+        item_date, item_datetime, Auction = '', '', False
         try:
             date_one = item_soup.find('div', attrs={'class': 'ux-layout-section__textual-display ux-layout-section__textual-display--statusMessage'})
             date_one = date_one.find('span', attrs={'class': 'ux-textspans ux-textspans--BOLD'})
-            date_one = date_one.text.replace("\n", " ").replace("Dieses Angebot wurde am ", "").replace(",", "").replace("um ", "").strip().split()
-            temp = date_one[3].split(':')
+            if date_one.text.find("Bieten endete am ") == -1:
+                date_one = date_one.text.replace("\n", " ").replace("Dieses Angebot wurde am ", "").replace(",", "").replace("um ", "").strip().split()
+                Auction = False
+            else:
+                date_one = date_one.text.replace("\n", " ").replace("Bieten endete am ", "").replace(",", "").replace("um ", "").strip().split()
+                date_one.append("beendet")
+                Auction = True
+            
+            temp = date_one[3].replace(".", "").split(':')
             date_one[3] = temp[0]
             date_one[4] = temp[1]
             date_one.append('00')
@@ -584,7 +596,7 @@ def ebay_scrape(base_url: str,
 
         except Exception as e:
             if e_vars.verbose: print('ip_get_datetime', e, item_link)
-        return item_date, item_datetime, days_before_date
+        return item_date, item_datetime, days_before_date, Auction
 
     def slicer(my_str,sub):
         index=my_str.find(sub)+9
@@ -813,12 +825,13 @@ def ebay_scrape(base_url: str,
                             with requests_cache.disabled():
                                 source = adapter.get(sp_get_item_link(item)).text
                             item_soup = BeautifulSoup(source, 'lxml')
-                            item_date_temp, item_datetime, days_before_date = ip_get_datetime(item_soup,
+                            item_date_temp, item_datetime, days_before_date, Auction = ip_get_datetime(item_soup,
                                                                                               days_before_date)
                             if item_date_temp:
                                 item_date = item_date_temp
                             if e_vars.debug or e_vars.verbose: print('Date-3:', item_date)
                             if e_vars.debug or e_vars.verbose: print('Datetime-3:', item_datetime)
+                            if e_vars.debug or e_vars.verbose: print('Auction:', Auction)
 
                         seller, seller_fb, store = ip_get_seller(item_soup)
                         if e_vars.debug or e_vars.verbose: print('Seller:', seller)
@@ -893,6 +906,8 @@ def ebay_scrape(base_url: str,
 
                             if e_vars.verbose: print('Datetime could not be set, default to today', e)
 
+                    if item_date == '':
+                        break
                     if days_before_date < comp_date or min(item_date, days_before_date) < min_date:
                         time_break = True
                         break
@@ -906,7 +921,7 @@ def ebay_scrape(base_url: str,
 
                         df__new = {'Title'          : item_title, 'Brand': brand, 'Model': model,
                                    'description'    : item_desc, 'Price': item_price,
-                                   'Shipping'       : item_shipping, 'Total Price': item_tot, 'Sold Date': item_date,
+                                   'Shipping'       : item_shipping, 'Total Price': item_tot, 'Sold Date': item_date, 'Auction Format': Auction,
                                    'Sold Datetime'  : item_datetime, 'Link': item_link, 'Seller': seller,
                                    'Multi Listing'  : multi_list, 'Quantity': quantity_sold - cap_sum,
                                    'Seller Feedback': seller_fb,
@@ -930,7 +945,7 @@ def ebay_scrape(base_url: str,
                                 sale_price = sale[0]
                             df__new = {'Title'        : item_title, 'Brand': brand, 'Model': model,
                                        'description'  : item_desc, 'Price': sale_price,
-                                       'Shipping'     : item_shipping, 'Total Price': item_tot, 'Sold Date': sale[2],
+                                       'Shipping'     : item_shipping, 'Total Price': item_tot, 'Sold Date': sale[2], 'Auction Format': Auction,
                                        'Sold Datetime': sale[3], 'Link': item_link, 'Seller': seller,
                                        'Multi Listing': multi_list, 'Quantity': sale[1], 'Seller Feedback': seller_fb,
                                        'Ignore'       : ignor_val, 'Store': store, 'City': city, 'State': state,
@@ -953,7 +968,7 @@ def ebay_scrape(base_url: str,
                             df__new = {'Title'        : item_title, 'Brand': brand, 'Model': model,
                                        'description'  : item_desc, 'Price': item_price,
                                        'Shipping'     : item_shipping,
-                                       'Total Price'  : item_tot, 'Sold Date': item_date,
+                                       'Total Price'  : item_tot, 'Sold Date': item_date, 'Auction Format': Auction,
                                        'Sold Datetime': item_datetime, 'Link': item_link, 'Seller': seller,
                                        'Quantity'     : quantity_sold - tot_sale_quant,
                                        'Multi Listing': multi_list, 'Seller Feedback': seller_fb, 'Ignore': 2,
@@ -1060,7 +1075,7 @@ def ebay_search(query: str,
     except Exception as e:
         # if file does not exist, create it
         df_dict = {'Title'      : [], 'Brand': [], 'Model': [], 'description': [], 'Price': [], 'Shipping': [],
-                   'Total Price': [], 'Sold Date': [], 'Sold Datetime': [], 'Quantity': [], 'Multi Listing': [],
+                   'Total Price': [], 'Sold Date': [],  'Auction Format': bool,'Sold Datetime': [], 'Quantity': [], 'Multi Listing': [],
                    'Seller'     : [], 'Seller Feedback': [], 'Link': [], 'Store': [], 'Ignore': [], 'City': [],
                    'State'      : [], 'Country': [], 'Sold Scrape Datetime': []}
         df = pd.DataFrame(df_dict)

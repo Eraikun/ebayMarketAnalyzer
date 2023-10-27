@@ -18,7 +18,7 @@ from plotting import median_plotting, brand_plot, ebay_seller_plot
 '''
     Time format d%. b% Y% (13. Okt 2015) might break the code. Better change locale in python environment
 '''
-locale.setlocale(locale.LC_ALL,'C')    
+locale.setlocale(locale.LC_ALL, 'de_DE') 
 
 
 brand_list = ['FOUNDER', 'ASUS', 'MSI', 'EVGA', 'GIGABYTE', 'ZOTAC', 'XFX', 'PNY', 'SAPPHIRE', 'COLORFUL', 'ASROCK',
@@ -385,8 +385,11 @@ df_ps5_disc = ebay_search('PS5 -digital', console_vars, query_exclusions, 499, 4
 df_ps5_disc = df_ps5_disc.assign(item='PS5 Disc')
 ps5_frames = [df_ps5_digital, df_ps5_disc]
 
-median_plotting(ps5_frames, 'PS5 Median Pricing', e_vars=console_vars, roll=0)
-median_plotting(ps5_frames, 'PS5 Median Pricing', e_vars=console_vars, roll=7)
+ps5_colors = ['#0B6623', '#708238']#, '#39FF14', '#00A86B', '#043927', '#01796F', '#4F7942']
+ps5_colors = ['red', 'purple']#, 'green', 'cyan', 'lime', 'black', 'white']
+
+median_plotting(ps5_frames, 'PS5 Median Pricing', colors=ps5_colors, e_vars=console_vars, roll=0)
+median_plotting(ps5_frames, 'PS5 Median Pricing', colors=ps5_colors, e_vars=console_vars, roll=7)
 '''
 # ---------------------------------------------------------------------------------------------
 
