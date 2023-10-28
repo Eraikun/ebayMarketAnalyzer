@@ -30,7 +30,10 @@ from plotting import ebay_plot, plot_profits
 
 # pylint: disable=line-too-long
 # pylint: disable=multiple-statements
-locale.setlocale(locale.LC_ALL, 'de_DE')
+
+# To-Do: unsupported lacle setting for de_DE
+# locale.setlocale(locale.LC_ALL, 'de_DE')
+
 def validate_inputs(query: str,
                     e_vars: EbayVariables,
                     query_exclusions: List[str] = [],
@@ -899,7 +902,7 @@ def ebay_scrape(base_url: str,
                                 item_date = datetime.strptime(date_txt, "%d %b %Y")
                             else:
                                 date_txt = date_time.replace('Verkauft', '').replace(',', '').strip()
-                                item_date = datetime.strptime(date_txt, "%d. %B %Y")
+                                item_date = datetime.strptime(date_txt, "%d. %b %Y")
                             item_datetime = item_date
 
                         except Exception as e:
@@ -1042,7 +1045,7 @@ def ebay_search(query: str,
     if not os.path.exists('Images'):
         os.makedirs('Images')
 
-    cache_name = f"{curr_path}\\cache_{start_datetime}"
+    cache_name = f"{curr_path}/cache_{start_datetime}"
 
     requests_cache.install_cache(cache_name, backend='sqlite', expire_after=300)
     retry_strategy = Retry(

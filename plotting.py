@@ -367,10 +367,10 @@ def median_plotting(dfs: List[pd.DataFrame],
 
     if roll > 0:
         plt.title(f"{title} {roll} Day Rolling Average - % MSRP")
-        plt.savefig(f"Images\\{title} {roll} Day Rolling Average - % MSRP")
+        plt.savefig(f"Images/{title} {roll} Day Rolling Average - % MSRP")
     else:
         plt.title(f"{title} - % MSRP")
-        plt.savefig(f"Images\\{title} - % MSRP")
+        plt.savefig(f"Images/{title} - % MSRP")
 
     if e_vars.show_plots: plt.show()
 
@@ -404,10 +404,10 @@ def median_plotting(dfs: List[pd.DataFrame],
     plt.gcf().text(0.85, 0.01, '@driscoll42', fontsize=9)
     if roll > 0:
         plt.title(f"{title} {roll} Day Rolling Average - {e_vars.ccode}")
-        plt.savefig(f"Images\\{title} {roll} Day Rolling Average - {e_vars.ccode}")
+        plt.savefig(f"Images/{title} {roll} Day Rolling Average - {e_vars.ccode}")
     else:
         plt.title(f"{title} - {e_vars.ccode}")
-        plt.savefig(f"Images\\{title} - {e_vars.ccode}")
+        plt.savefig(f"Images/{title} - {e_vars.ccode}")
     if e_vars.show_plots: plt.show()
 
 
@@ -471,10 +471,10 @@ def mean_plotting(dfs: List[pd.DataFrame],
 
     if roll > 0:
         plt.title(f"{title} {roll} Day Rolling Average - % MSRP")
-        plt.savefig(f"Images\\{title} {roll} Day Rolling Average - % MSRP")
+        plt.savefig(f"Images/{title} {roll} Day Rolling Average - % MSRP")
     else:
         plt.title(f"{title} - % MSRP")
-        plt.savefig(f"Images\\{title} - % MSRP")
+        plt.savefig(f"Images/{title} - % MSRP")
 
     if e_vars.show_plots: plt.show()
 
@@ -512,10 +512,10 @@ def mean_plotting(dfs: List[pd.DataFrame],
     plt.gcf().text(0.85, 0.01, '@driscoll42', fontsize=9)
     if roll > 0:
         plt.title(f"{title} {roll} Day Rolling Average - {e_vars.ccode}")
-        plt.savefig(f"Images\\{title} {roll} Day Rolling Average - {e_vars.ccode}")
+        plt.savefig(f"Images/{title} {roll} Day Rolling Average - {e_vars.ccode}")
     else:
         plt.title(f"{title} - {e_vars.ccode}")
-        plt.savefig(f"Images\\{title} - {e_vars.ccode}")
+        plt.savefig(f"Images/{title} - {e_vars.ccode}")
     if e_vars.show_plots: plt.show()
 
 
@@ -582,7 +582,7 @@ def pareto_plot(df: pd.DataFrame,
 
     fig.tight_layout()
 
-    plt.savefig('Images\\' + title)
+    plt.savefig('Images/' + title)
     if e_vars.show_plots: plt.show()
 
 
@@ -753,8 +753,8 @@ def brand_plot(dfs: List[pd.DataFrame],
     plt.legend()
     plt.tight_layout()
     if roll > 0:
-        plt.savefig(f"Images\\{title} {roll} Day Rolling Average")
+        plt.savefig(f"Images/{title} {roll} Day Rolling Average")
     else:
-        plt.savefig(f"Images\\{title}")
+        plt.savefig(f"Images/{title}")
 
     if e_vars.show_plots: plt.show()

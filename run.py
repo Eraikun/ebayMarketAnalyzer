@@ -18,7 +18,9 @@ from plotting import median_plotting, brand_plot, ebay_seller_plot
 '''
     Time format d%. b% Y% (13. Okt 2015) might break the code. Better change locale in python environment
 '''
-locale.setlocale(locale.LC_ALL, 'de_DE') 
+# To-Do: Unsupported locale Setting
+# hot fix by typing LC_ALL=c into the terminal
+# locale.setlocale(locale.LC_ALL, 'de_DE') 
 
 
 brand_list = ['FOUNDER', 'ASUS', 'MSI', 'EVGA', 'GIGABYTE', 'ZOTAC', 'XFX', 'PNY', 'SAPPHIRE', 'COLORFUL', 'ASROCK',
