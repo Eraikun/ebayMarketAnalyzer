@@ -378,10 +378,10 @@ median_plotting(xbox_one_frames, 'Xbox One Median Pricing', e_vars=console_vars,
 # ---------------------------------------------------------------------------------------------
 
 # PS5 Analysis (All time)
-df_ps5_digital = ebay_search('PS5 Digital', console_vars, ps5_digi_excludes, 399, 300, 11000,
-                             min_date=datetime(2020, 9, 16))
-df_ps5_disc = ebay_search('PS5 -digital', console_vars, query_exclusions, 499, 450, 11000,
-                          min_date=datetime(2020, 9, 16))
+df_ps5_digital = ebay_search('PS5 Digital', console_vars, ps5_digi_excludes, 399, 300, 700,
+                             min_date=datetime(2023, 10, 16))
+df_ps5_disc = ebay_search('PS5 -digital', console_vars, query_exclusions, 399, 450, 700,
+                          min_date=datetime(2023, 10, 16))
 
 # PS5 Plotting
 df_ps5_disc = df_ps5_disc.assign(item='PS5 Disc')
