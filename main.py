@@ -738,11 +738,21 @@ def ebay_scrape(base_url: str,
             seller_fb_text = seller_fb[1].text
             seller_fb = int(seller_fb_text)
             # seller_fb = int(seller_fb_text[0].find('a').text)
+            try:
+                store_id = item_soup.find('div', attrs={'class': 'vim x-about-this-seller'})
+                store_id = store_id.find('div', attrs={'class': 'ux-section-module'})
+                store_id = store_id.find('div', attrs={'class': 'ux-section'})
+                store_id = store_id.find('div', attrs={'class': 'ux-section__content'})
+                store_id = store_id.find('div', attrs={'class': 'ux-section__item'})
+                store_id = store_id.find('span', attrs={'class': 'ux-textspans'})
+                store_id = store_id.text
 
-            store_id = item_soup.find_all('span', attrs={'class': 'ux-textspans ux-textspans--PSEUDOLINK'})
-
-            if len(store_id[0].text) > 0:
-                store = 1
+                if store_id.find('privat')!= -1:
+                    store = 0
+                else:
+                    store = 1
+            except Exception as e:
+                if e_vars.verbose: print('failed to check if private or shop', e)
         except Exception as e:
             try:
                 seller_fb = item_soup.find('ul', attrs={'class': 'x-sellercard-atf__data-item-wrapper'})
