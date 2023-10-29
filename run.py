@@ -374,14 +374,15 @@ df_xbox_one_x = ebay_search('Xbox One X -repair -series -box -broken -parts -bad
 xbox_one_frames = [df_xbox_one_s, df_xbox_one_x]
 median_plotting(xbox_one_frames, 'Xbox One Median Pricing', e_vars=console_vars, roll=0)
 median_plotting(xbox_one_frames, 'Xbox One Median Pricing', e_vars=console_vars, roll=7)
-'''
+
 # ---------------------------------------------------------------------------------------------
 
 # PS5 Analysis (All time)
 df_ps5_digital = ebay_search('PS5 Digital', console_vars, ps5_digi_excludes, 399, 300, 700,
-                             min_date=datetime(2023, 10, 16))
+                             min_date=datetime(2023, 10, 1))
+print("***************************2ND SEARCH***********************************************")
 df_ps5_disc = ebay_search('PS5 -digital', console_vars, query_exclusions, 399, 450, 700,
-                          min_date=datetime(2023, 10, 16))
+                          min_date=datetime(2023, 10, 1))
 
 # PS5 Plotting
 df_ps5_disc = df_ps5_disc.assign(item='PS5 Disc')
@@ -389,10 +390,12 @@ ps5_frames = [df_ps5_digital, df_ps5_disc]
 
 ps5_colors = ['#0B6623', '#708238']#, '#39FF14', '#00A86B', '#043927', '#01796F', '#4F7942']
 ps5_colors = ['red', 'purple']#, 'green', 'cyan', 'lime', 'black', 'white']
-
+print("***************************1ST PLOTTING***********************************************")
 median_plotting(ps5_frames, 'PS5 Median Pricing', colors=ps5_colors, e_vars=console_vars, roll=0)
+print("***************************2ND PLOTTING***********************************************")
 median_plotting(ps5_frames, 'PS5 Median Pricing', colors=ps5_colors, e_vars=console_vars, roll=7)
-'''
+print("***************************THE END***********************************************")
+
 # ---------------------------------------------------------------------------------------------
 
 # Xbox Analysis (All time)
@@ -409,18 +412,19 @@ median_plotting(xbox_series_frames, 'Xbox Median Pricing', e_vars=console_vars, 
 median_plotting(xbox_series_frames, 'Xbox Median Pricing', e_vars=console_vars, roll=7)
 
 # ---------------------------------------------------------------------------------------------
-
+'''
 # Nintendo Switch
-df_switch = ebay_search('Nintendo Switch -lite', console_vars, query_exclusions, 300, 0, 2800)
-df_switch_lite = ebay_search('Nintendo Switch Lite', console_vars, query_exclusions, 200, 0, 2800)
+df_switch = ebay_search('Nintendo Switch -lite', console_vars, query_exclusions, 300, 0, 2800, min_date=datetime(2020, 9, 22))
+df_switch_lite = ebay_search('Nintendo Switch Lite', console_vars, query_exclusions, 200, 0, 2800, min_date=datetime(2020, 9, 22))
 
 # Nintendo Switch Plotting
 switch_frames = [df_switch_lite, df_switch]
-
+ps5_colors = ['#0B6623', '#708238']#, '#39FF14', '#00A86B', '#043927', '#01796F', '#4F7942']
+ps5_colors = ['red', 'purple']#, 'green', 'cyan', 'lime', 'black', 'white']
 ebay_seller_plot(switch_frames, 'Nintendo Switch', console_vars)
-median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_vars, roll=0)
-median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_vars, roll=7)
-
+median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_vars, colors=ps5_colors, roll=0)
+median_plotting(switch_frames, 'Nintendo Switch Median Pricing', e_vars=console_vars, colors=ps5_colors, roll=7)
+'''
 # ---------------------------------------------------------------------------------------------
 
 # Fermi Series

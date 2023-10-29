@@ -34,6 +34,27 @@ from plotting import ebay_plot, plot_profits
 # To-Do: unsupported lacle setting for de_DE
 # locale.setlocale(locale.LC_ALL, 'de_DE')
 
+def check_original_listing(item_soup,
+                           e_vars: EbayVariables,
+                           adapter: requests) -> bool:
+    try:
+        detailed_soup = item_soup.find('div', attrs={'class': 'warning-msg page-alert page-alert--info'})
+        if detailed_soup.find('p').text.find('The item you selected has ended, but we found something similar') != -1:
+            time.sleep(e_vars.sleep_len * random.uniform(0, 1))
+            # We don't want to cache all the calls into the individual listings, they'll never be repeated
+            with requests_cache.disabled():
+                item_link = detailed_soup.find('a')['href']
+                source = adapter.get(item_link).text
+                item_soup = BeautifulSoup(source, 'lxml')
+            if item_soup.find('div', attrs={'class': 'ux-message__icon ux-message__icon--INLINE-WARNING'}) != -1:
+                if item_soup.find('div', attrs={'class': 'ux-layout-section__textual-display ux-layout-section__textual-display--statusMessage'}) != -1:
+                    return True
+                    
+                else:
+                    return False
+    except:
+        return False
+
 def validate_inputs(query: str,
                     e_vars: EbayVariables,
                     query_exclusions: List[str] = [],
@@ -496,8 +517,8 @@ def ebay_scrape(base_url: str,
                 df: pd.DataFrame,
                 adapter: requests,
                 e_vars: EbayVariables,
-                min_date: datetime = datetime(2023, 10, 1),
-                max_date: datetime = datetime(2023, 10, 1)) -> pd.DataFrame:
+                min_date: datetime = datetime(2020, 10, 1),
+                max_date: datetime = datetime(2023, 10, 31)) -> pd.DataFrame:
     """
 
     Parameters
@@ -524,7 +545,8 @@ def ebay_scrape(base_url: str,
 
     def sp_get_domestic(item):
         try:
-            item_domestic = str(item.find('span', class_='s-item__location').text).startswith("From ") == False
+            domestic = item.find('span', class_='s-item__location s-item__itemLocation')
+            item_domestic = str(domestic.find('span', class_='ITALIC').text).startswith("aus ") == False
         except Exception as e:
             # failed to find item location, meaning the item is domestic
             item_domestic = True
@@ -573,7 +595,7 @@ def ebay_scrape(base_url: str,
         return item_shipping
 
     def ip_get_datetime(item_soup, days_before_date):
-        item_date, item_datetime, Auction = '', '', False
+        item_date, item_datetime, Auction = '', '', 0
         try:
             detailed_soup = item_soup.find('div', attrs={'class': 'warning-msg page-alert page-alert--info'})
             if e_vars.debug or e_vars.verbose: print(detailed_soup.find('p').text)
@@ -608,11 +630,11 @@ def ebay_scrape(base_url: str,
             date_one = date_one.find('span', attrs={'class': 'ux-textspans ux-textspans--BOLD'})
             if date_one.text.find("Bieten endete am ") == -1:
                 date_one = date_one.text.replace("\n", " ").replace("Dieses Angebot wurde am ", "").replace(",", "").replace("um ", "").strip().split()
-                Auction = False
+                Auction = 0
             else:
                 date_one = date_one.text.replace("\n", " ").replace("Bieten endete am ", "").replace(",", "").replace("um ", "").strip().split()
                 date_one.append("beendet")
-                Auction = True
+                Auction = 1
             
             temp = date_one[3].replace(".", "").split(':')
             date_one[3] = temp[0]
@@ -694,21 +716,44 @@ def ebay_scrape(base_url: str,
         return city, state, country_name
 
     def ip_get_seller(item_soup):
-        seller, seller_fb, store = '', '', False
+        seller, seller_fb, store = '', '', 0
+        try:
+            detailed_soup = item_soup.find('div', attrs={'class': 'warning-msg page-alert page-alert--info'})
+            if e_vars.debug or e_vars.verbose: print(detailed_soup.find('p').text)
+            if detailed_soup.find('p').text.find('The item you selected has ended, but we found something similar') != -1:
+                time.sleep(e_vars.sleep_len * random.uniform(0, 1))
+                # We don't want to cache all the calls into the individual listings, they'll never be repeated
+                with requests_cache.disabled():
+                    item_link = detailed_soup.find('a')['href']
+                    source = adapter.get(item_link).text
+                    item_soup = BeautifulSoup(source, 'lxml')
+        except:
+            if e_vars.debug or e_vars.verbose: print('checked if original or suggested listings')
         try:
             seller_text = item_soup.find_all('span', attrs={'class': 'ux-textspans ux-textspans--PSEUDOLINK ux-textspans--BOLD'})
             seller = seller_text[0].text
 
-            seller_fb_text = item_soup.find_all('span', attrs={'class': 'ux-textspans ux-textspans--PSEUDOLINK'})
-            seller_fb = int(seller_fb_text[1].text)
+            seller_fb = item_soup.find('div', attrs={'class': 'ux-seller-section__item--seller'})
+            seller_fb = seller_fb.find_all('a')
+            seller_fb_text = seller_fb[1].text
+            seller_fb = int(seller_fb_text)
             # seller_fb = int(seller_fb_text[0].find('a').text)
 
             store_id = item_soup.find_all('span', attrs={'class': 'ux-textspans ux-textspans--PSEUDOLINK'})
 
             if len(store_id[0].text) > 0:
-                store = True
+                store = 1
         except Exception as e:
-            if e_vars.verbose: print('ip_get_seller', e, item_link)
+            try:
+                seller_fb = item_soup.find('ul', attrs={'class': 'x-sellercard-atf__data-item-wrapper'})
+                seller_fb = seller_fb.find_all('li')
+                seller_fb = seller_fb[0]
+                seller_fb = seller_fb.find_all('span', attrs={'class': 'ux-textspans'})
+                seller_fb = seller_fb.replace(')','').split('(')
+                seller = seller_fb[0]
+                seller_fb = seller_fb[1]
+            except:
+                if e_vars.verbose: print('ip_get_seller failed to find', e)
         return seller, seller_fb, store
 
     def ip_get_datetime_card(item_soup, days_before_date):
@@ -834,10 +879,11 @@ def ebay_scrape(base_url: str,
                     if e_vars.debug or e_vars.verbose: print('Total:', item_tot)
 
                     quantity_sold, sold_list, multi_list = 1, [], False
-                    seller, seller_fb, store = '', '', False
+                    seller, seller_fb, store = '', '', 0
                     city, state, country_name = '', '', ''
 
                     if e_vars.feedback or e_vars.quantity_hist:
+                        '''
                         time.sleep(e_vars.sleep_len * random.uniform(0, 1))
                         # We don't want to cache all the calls into the individual listings, they'll never be repeated
                         with requests_cache.disabled():
@@ -847,10 +893,11 @@ def ebay_scrape(base_url: str,
                                 if e_vars.verbose: print('ebay_scrape-isource', e, item_link)
                                 continue
                         item_soup = BeautifulSoup(isource, 'lxml')
-
+                        
                         # Check if this is the original item, or eBay trying to sell another item and having a redirect
+                        orig_check =  check_original_listing(item_soup, e_vars, adapter)
                         oitems = item_soup.find_all('a', attrs={'class': 'nodestar-item-card-details__view-link'})
-
+                        
                         if len(oitems) > 0:
                             if e_vars.debug or e_vars.verbose: print(
                                     'Search Link goes to similar item, finding original')
@@ -869,8 +916,8 @@ def ebay_scrape(base_url: str,
                             with requests_cache.disabled():
                                 source = adapter.get(orig_link).text
                             item_soup = BeautifulSoup(source, 'lxml')
-
-                        if not item_datetime or item_date:
+                        '''
+                        if not item_datetime or not item_date:
                             time.sleep(e_vars.sleep_len * random.uniform(0, 1))
                             # We don't want to cache all the calls into the individual listings, they'll never be repeated
                             with requests_cache.disabled():
@@ -1056,7 +1103,7 @@ def ebay_search(query: str,
                 msrp: float = 0,
                 min_price: float = 0,
                 max_price: float = 10000,
-                min_date: datetime = datetime.now() - timedelta(days=7)) -> pd.DataFrame:
+                min_date: datetime = datetime.now() - timedelta(days=31)) -> pd.DataFrame:
     """
     The main function of the project which searches eBay for a query, gathering all sold listings and outputting a
     dataframe of the search query and generates basic plots on the data.
@@ -1086,8 +1133,8 @@ def ebay_search(query: str,
     if e_vars.verbose: pd.set_option('display.max_colwidth', None)
     start = time.time()
     print(query)
-
-    start_datetime = datetime.today().strftime("%Y%m%d%H%M%S")
+    locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
+    start_datetime = datetime.today().strftime("%d.%b%Y%H%M%S")
     # https://realpython.com/caching-external-api-requests/
     curr_path = pathlib.Path(__file__).parent.absolute()
 
@@ -1130,7 +1177,7 @@ def ebay_search(query: str,
     except Exception as e:
         # if file does not exist, create it
         df_dict = {'Title'      : [], 'Brand': [], 'Model': [], 'description': [], 'Price': [], 'Shipping': [],
-                   'Total Price': [], 'Sold Date': [],  'Auction Format': bool,'Sold Datetime': [], 'Quantity': [], 'Multi Listing': [],
+                   'Total Price': [], 'Sold Date': [],  'Auction Format': [],'Sold Datetime': [], 'Quantity': [], 'Multi Listing': [],
                    'Seller'     : [], 'Seller Feedback': [], 'Link': [], 'Store': [], 'Ignore': [], 'City': [],
                    'State'      : [], 'Country': [], 'Sold Scrape Datetime': []}
         df = pd.DataFrame(df_dict)
@@ -1188,7 +1235,7 @@ def ebay_search(query: str,
 
             fomatted_query = query_w_excludes.replace(' ', '+').replace(',', '%2C').replace('(', '%28').replace(')',
                                                                                                                 '%29')
-            url = f"https://www.ebay.{extension}/sch/i.html?_from=R40&_nkw={fomatted_query}&_sacat={e_vars.sacat}&LH_PrefLoc=1&LH_Sold=1&LH_Complete=1&_udlo={price_ranges[i]}&_udhi={price_ranges[i + 1]}&rt=nc&_ipg=50&_pgn=4"
+            url = f"https://www.ebay.{extension}/sch/i.html?_from=R40&_nkw={fomatted_query}&_sacat={e_vars.sacat}&LH_PrefLoc=1&LH_Sold=1&LH_Complete=1&_udlo={price_ranges[i]}&_udhi={price_ranges[i + 1]}&rt=nc&_ipg=200&_pgn=4"
 
             source = adapter.get(url, timeout=10).text
 
@@ -1251,7 +1298,7 @@ def ebay_search(query: str,
         for i in range(len(price_ranges) - 1):
             fomatted_query = query_w_excludes.replace(' ', '+').replace(',', '%2C').replace('(', '%28').replace(')',
                                                                                                                 '%29')
-            url = f"https://www.ebay.{extension}/sch/i.html?_from=R40&_nkw={fomatted_query}&_sacat={e_vars.sacat}&LH_PrefLoc=1&LH_Sold=1&LH_Complete=1&_udlo={price_ranges[i]}&_udhi={price_ranges[i + 1]}&rt=nc&_ipg=50&_pgn="
+            url = f"https://www.ebay.{extension}/sch/i.html?_from=R40&_nkw={fomatted_query}&_sacat={e_vars.sacat}&LH_PrefLoc=1&LH_Sold=1&LH_Complete=1&_udlo={price_ranges[i]}&_udhi={price_ranges[i + 1]}&rt=nc&_ipg=200&_pgn="
 
             if e_vars.debug or e_vars.verbose: print(price_ranges[i], price_ranges[i + 1], url)
 
